@@ -7,6 +7,8 @@ internal sealed class BleScanner : IDisposable
 {
     private const ushort CompanyId = 0xFFFF;
     private const byte ManufacturerType = 0xFF;
+    private const int CompanyIdLength = 2;
+    private const int MinRawLength = CompanyIdLength + 1;
 
     private readonly BluetoothLEAdvertisementWatcher _watcher;
 
@@ -38,12 +40,12 @@ internal sealed class BleScanner : IDisposable
             if (section.DataType != ManufacturerType) continue;
 
             var raw = ReadBuffer(section.Data);
-            if (raw.Length < 3) continue;
+            if (raw.Length < MinRawLength) continue;
 
             var companyId = (ushort)(raw[0] | (raw[1] << 8));
             if (companyId != CompanyId) continue;
 
-            var buds = BudsAdvertisement.TryParse(raw[2..]);
+            var buds = BudsAdvertisement.TryParse(raw[CompanyIdLength..]);
             if (buds is not null) OnBudsData?.Invoke(buds);
         }
     }
