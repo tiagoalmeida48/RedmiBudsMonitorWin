@@ -1,30 +1,17 @@
-using System.Windows.Forms;
 using RedmiBudsMonitor;
-using System.Threading;
 
-internal class Program
+internal static class Program
 {
-    private static Mutex mutex = null;
-
     [STAThread]
-    static void Main()
+    private static void Main()
     {
-        const string appName = "RedmiBudsMonitorSingleInstanceMutex";
-        bool createdNew;
-
-        mutex = new Mutex(true, appName, out createdNew);
-
-        if (!createdNew)
-        {
-            // App já está rodando, sai silenciosamente.
-            return;
-        }
+        using var mutex = new Mutex(true, "RedmiBudsMonitor_SingleInstance", out bool created);
+        if (!created) return;
 
         Application.EnableVisualStyles();
-        Application.SetCompatibleTextRenderingDefault(false);
 
         using var app = new TrayApp();
         app.Start();
-        Application.Run(); // bloqueia até Application.Exit()
+        Application.Run();
     }
 }
