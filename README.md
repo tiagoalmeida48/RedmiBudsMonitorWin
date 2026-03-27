@@ -1,15 +1,37 @@
-# Redmi Buds 5 Monitor
+# Redmi Buds Monitor
 
-Console app Windows para leitura de bateria dos fones Redmi Buds 5 e engenharia
-reversa do protocolo da caixinha via BLE advertisements.
+Aplicativo de bandeja (system tray) para Windows que exibe o nível de bateria
+dos Redmi Buds 5 (fone esquerdo, fone direito e caixinha) em tempo real via
+BLE advertisements.
+
+---
+
+## Funcionalidades
+
+- Ícone na bandeja do sistema visível apenas quando o fone está conectado
+- Ícone mostra o percentual mínimo de bateria quando está abaixo de 50%
+- Popup ao clicar no ícone: exibe esquerdo, caixinha e direito com cores indicativas
+- Indicador de carregamento (`⚡`) quando os fones estão dentro da caixinha
+- Instância única (mutex) — não abre duplicado
+- Atualização automática a cada 10 segundos
+
+### Cores de bateria
+
+| Nível      | Cor     |
+|------------|---------|
+| >= 50%     | Verde   |
+| >= 20%     | Laranja |
+| < 20%      | Vermelho|
+| Indisponível | Cinza |
 
 ---
 
 ## Requisitos
 
-- Windows 10 v1903+ (build 18362) ou Windows 11
+- Windows 10 v1903+ (build 19041) ou Windows 11
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
 - Bluetooth LE no PC
+- Redmi Buds 5 pareado no sistema
 
 ---
 
@@ -28,69 +50,45 @@ dotnet publish -c Release -r win-x64 --self-contained -o publish/
 
 ```
 RedmiBudsMonitor/
-├── Program.cs                   entry point
-├── RedmiBudsMonitor.csproj      net10.0-windows10.0.19041.0
-└── src/
-    ├── Logger.cs                output colorido com barra de bateria
-    ├── BleScanner.cs            captura advertisements + filtra Xiaomi
-    ├── BudsAdvertisement.cs     model + análise de candidatos
-    └── GattBatteryReader.cs     leitura GATT + enumeração de serviços
+├── Program.cs                        entry point — STAThread, single instance, inicia TrayApp
+├── RedmiBudsMonitor.csproj           WinExe, net10.0-windows10.0.19041.0, win-x64
+├── Bluetooth/
+│   ├── BleScanner.cs                 escuta BLE advertisements, filtra por Company ID
+│   ├── BudsAdvertisement.cs          parseia o payload do advertisement (L/R/Case)
+│   ├── BluetoothConnectionWatcher.cs monitora conexão/desconexão via DeviceWatcher
+│   ├── EarbudData.cs                 record: Battery (byte) + InCase (bool)
+│   └── CaseData.cs                   record: Battery (byte) + Charging (bool)
+├── Domain/
+│   ├── BatteryState.cs               estado thread-safe, agrega leituras do scanner
+│   ├── BatterySnapshot.cs            snapshot imutável com L/R/Case + MinPercent
+│   ├── BatteryEntry.cs               par (Pct, Label) por dispositivo
+│   ├── BatteryColors.cs              extension methods em byte: IsValid, ToColor, ToLabel
+│   └── BatteryDevice.cs              enum: Left, Case, Right
+└── UI/
+    ├── TrayApp.cs                    orquestra scanner, watcher, ícone e popup
+    ├── TrayIconRenderer.cs           renderiza ícone 32×32 (headphone + % se < 50)
+    └── BatteryPopup.cs               form 220×155 sem borda, próximo à bandeja
 ```
 
 ---
 
-## O que o app faz
+## Protocolo do advertisement
 
-### BLE Advertisement Scanner
-Filtra `DataSections` tipo `0xFF` (Manufacturer Specific Data) pelo Company ID
-`0x038F` (Xiaomi). Loga os bytes brutos completos para análise.
+O scanner filtra `DataSections` do tipo `0xFF` (Manufacturer Specific Data) pelo
+Company ID `0xFFFF`. O payload após os 2 bytes de Company ID deve começar com o
+cabeçalho `0x16 0x01` e ter ao menos 8 bytes.
 
-```
-[RAW]  AA:BB:CC:DD:EE:FF |  -65 dBm | raw(16): 8F 03 4C 01 ...
-[RAW]    payload(14): 4C 01 07 19 01 00 58 5A 47 ...
-[DATA]   offset [ 6] =  88  ← candidato
-[DATA]   offset [ 7] =  90  ← candidato
-[DATA]   offset [ 8] =  71  ← candidato
-```
+| Offset | Campo    | Máscara |
+|--------|----------|---------|
+| 5      | Esquerdo | `& 0x7F` = bateria; `& 0x80` = na caixinha |
+| 6      | Direito  | `& 0x7F` = bateria; `& 0x80` = na caixinha |
+| 7      | Caixinha | `& 0x7F` = bateria; `& 0x80` = carregando  |
 
-### GATT Battery Service (0x180F)
-Se o fone implementar o serviço padrão, exibe a bateria com notificações
-em tempo real. O Redmi Buds 5 frequentemente **não** implementa este serviço —
-nesse caso a bateria está no advertisement.
+Valor `0xFF` (ou > 100 após aplicar a máscara) indica dado indisponível.
 
-### Enumeração GATT completa
-Lista todos os serviços e características, incluindo proprietários Xiaomi,
-com os valores brutos de cada característica legível.
+### Detecção de carregamento dos fones
 
----
-
-## Engenharia reversa da caixinha
-
-| Passo | Ação |
-|-------|------|
-| 1 | Execute com caixinha em ~80% → anote os `offset [N]` candidatos |
-| 2 | Descarregue a caixinha para ~50% → execute novamente |
-| 3 | O offset que foi de ~80 para ~50 é o byte da caixinha |
-| 4 | Repita para confirmar o esquerdo e o direito |
-
-Após confirmar, edite `BudsAdvertisement.TryParse` em `BudsAdvertisement.cs`:
-
-```csharp
-BatteryLeftC1  = payload[OFFSET_LEFT],
-BatteryRightC1 = payload[OFFSET_RIGHT],
-BatteryCaseC1  = payload[OFFSET_CASE],
-```
-
----
-
-## Protocolo MiBeacon (referência)
-
-| Offset | Bytes | Campo                  |
-|--------|-------|------------------------|
-| 0–1    | 2     | Frame control          |
-| 2–3    | 2     | Device type            |
-| 4      | 1     | Frame counter          |
-| 5–10   | 6     | MAC address (reversed) |
-| 11+    | var   | Capability + Object data |
-
-O Object data contém status e bateria — os offsets variam por modelo/firmware.
+Um fone é considerado carregando quando:
+- está dentro da caixinha (`InCase = true`)
+- seu percentual é menor que 100%
+- a caixinha tem bateria disponível (> 0%)
