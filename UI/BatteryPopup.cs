@@ -21,7 +21,7 @@ internal sealed class BatteryPopup : Form
         ShowInTaskbar = false;
         TopMost = true;
         DoubleBuffered = true;
-        BackColor = Color.FromArgb(28, 28, 28);
+        BackColor = Color.FromArgb(28, 28, 30);
         Width = 220;
         Height = 155;
         StartPosition = FormStartPosition.Manual;
@@ -38,7 +38,7 @@ internal sealed class BatteryPopup : Form
             return;
         }
 
-        var area = Screen.PrimaryScreen!.WorkingArea;
+        var area = Screen.FromPoint(MousePosition).WorkingArea;
         Location = new Point(area.Right - Width - 14, area.Bottom - Height - 14);
         Show();
         Activate();
@@ -126,12 +126,12 @@ internal sealed class BatteryPopup : Form
     private static void DrawEarbud(Graphics g, BatteryDevice side)
     {
         var isRight = side == BatteryDevice.Right;
-        using var brush = new SolidBrush(Color.FromArgb(235, 235, 235));
-
         var stemX = isRight ? 0f : -3.5f;
-        g.FillPath(brush, RoundRect(stemX, -7f, 3.5f, 13f, 1.5f));
-
         var headX = isRight ? -4f : 0f;
+
+        using var brush = new SolidBrush(Color.FromArgb(235, 235, 235));
+        using var stem = RoundRect(stemX, -7f, 3.5f, 13f, 1.5f);
+        g.FillPath(brush, stem);
         g.FillEllipse(brush, headX, -7f, 6.5f, 7.5f);
 
         using var dark = new SolidBrush(Color.FromArgb(28, 28, 30));
@@ -141,7 +141,8 @@ internal sealed class BatteryPopup : Form
     private static void DrawCase(Graphics g)
     {
         using var brush = new SolidBrush(Color.FromArgb(235, 235, 235));
-        g.FillPath(brush, RoundRect(-6.5f, -2f, 13f, 8.5f, 3f));
+        using var body = RoundRect(-6.5f, -2f, 13f, 8.5f, 3f);
+        g.FillPath(brush, body);
 
         using var lid = new Pen(brush, 1.5f);
         g.DrawArc(lid, -6.5f, -6f, 13f, 11f, 180, 180);

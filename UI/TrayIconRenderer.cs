@@ -18,25 +18,19 @@ internal static class TrayIconRenderer
         using var bmp = new Bitmap(IconSize, IconSize);
         using var g = Graphics.FromImage(bmp);
 
-        ConfigureGraphics(g);
+        g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
+        g.SmoothingMode = SmoothingMode.HighQuality;
+        g.Clear(Color.Transparent);
 
-        if (min.IsValid) DrawHeadphone(g);
-        if (min.IsValid && min < 50) DrawBatteryLabel(g, min);
+        if (min.IsValid()) DrawHeadphone(g);
+        if (min.IsValid() && min < 50) DrawBatteryLabel(g, min);
 
         return BitmapToIcon(bmp);
     }
 
-    private static void ConfigureGraphics(Graphics g)
-    {
-        g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
-        g.SmoothingMode = SmoothingMode.HighQuality;
-        g.Clear(Color.Transparent);
-    }
-
     private static void DrawHeadphone(Graphics g)
     {
-        using var arc = new Pen(Color.White, 3.5f);
-        arc.LineJoin = LineJoin.Round;
+        using var arc = new Pen(Color.White, 3.5f) { LineJoin = LineJoin.Round };
         g.DrawArc(arc, 3, 1, 26, 18, 180, 180);
 
         using var brush = new SolidBrush(Color.White);
@@ -52,17 +46,17 @@ internal static class TrayIconRenderer
         var text = $"{percent}";
         var emSize = text.Length > 2 ? 19f : 24f;
 
+        using var fontFamily = new FontFamily("Segoe UI");
+        using var sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
         using var path = new GraphicsPath();
-        using var sf = new StringFormat();
-        sf.Alignment = StringAlignment.Center;
-        sf.LineAlignment = StringAlignment.Center;
-        path.AddString(text, new FontFamily("Segoe UI"), (int)FontStyle.Bold,
-            emSize, new RectangleF(0, 2, IconSize, IconSize), sf);
+        path.AddString(text, fontFamily, (int)FontStyle.Bold, emSize, new RectangleF(0, 2, IconSize, IconSize), sf);
 
-        using var outline = new Pen(Color.FromArgb(230, 10, 10, 10), 4f);
-        outline.LineJoin = LineJoin.Round;
-        outline.StartCap = LineCap.Round;
-        outline.EndCap = LineCap.Round;
+        using var outline = new Pen(Color.FromArgb(230, 10, 10, 10), 4f)
+        {
+            LineJoin = LineJoin.Round,
+            StartCap = LineCap.Round,
+            EndCap = LineCap.Round,
+        };
         g.DrawPath(outline, path);
 
         using var fill = new SolidBrush(percent.ToColor());

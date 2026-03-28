@@ -12,9 +12,9 @@ internal readonly record struct BatterySnapshot(BatteryEntry Left, BatteryEntry 
         get
         {
             var min = Unavailable;
-            if (Left.Pct.IsValid) min = Math.Min(min, Left.Pct);
-            if (Right.Pct.IsValid) min = Math.Min(min, Right.Pct);
-            if (Case.Pct.IsValid) min = Math.Min(min, Case.Pct);
+            if (Left.Pct.IsValid()) min = Math.Min(min, Left.Pct);
+            if (Right.Pct.IsValid()) min = Math.Min(min, Right.Pct);
+            if (Case.Pct.IsValid()) min = Math.Min(min, Case.Pct);
             return min;
         }
     }

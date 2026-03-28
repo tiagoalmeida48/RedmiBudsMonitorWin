@@ -27,26 +27,33 @@ internal sealed class BleScanner : IDisposable
 
     public void Dispose()
     {
-        _watcher.Stop();
         _watcher.Received -= HandleReceived;
+        if (_watcher.Status == BluetoothLEAdvertisementWatcherStatus.Started)
+            _watcher.Stop();
     }
 
     private void HandleReceived(
         BluetoothLEAdvertisementWatcher _,
         BluetoothLEAdvertisementReceivedEventArgs args)
     {
-        foreach (var section in args.Advertisement.DataSections)
+        try
         {
-            if (section.DataType != ManufacturerType) continue;
+            foreach (var section in args.Advertisement.DataSections)
+            {
+                if (section.DataType != ManufacturerType) continue;
 
-            var raw = ReadBuffer(section.Data);
-            if (raw.Length < MinRawLength) continue;
+                var raw = ReadBuffer(section.Data);
+                if (raw.Length < MinRawLength) continue;
 
-            var companyId = (ushort)(raw[0] | (raw[1] << 8));
-            if (companyId != CompanyId) continue;
+                var companyId = (ushort)(raw[0] | (raw[1] << 8));
+                if (companyId != CompanyId) continue;
 
-            var buds = BudsAdvertisement.TryParse(raw[CompanyIdLength..]);
-            if (buds is not null) OnBudsData?.Invoke(buds);
+                var buds = BudsAdvertisement.TryParse(raw[CompanyIdLength..]);
+                if (buds is not null) OnBudsData?.Invoke(buds);
+            }
+        }
+        catch
+        {
         }
     }
 

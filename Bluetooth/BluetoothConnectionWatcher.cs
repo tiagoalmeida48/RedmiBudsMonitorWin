@@ -34,7 +34,9 @@ internal sealed class BluetoothConnectionWatcher : IDisposable
 
     private void OnAdded(DeviceInformation info)
     {
-        if (!info.Name.Contains(_deviceNameFilter, StringComparison.OrdinalIgnoreCase)) return;
+        if (_deviceId is not null) return;
+        if (!info.Name.StartsWith(_deviceNameFilter, StringComparison.OrdinalIgnoreCase)) return;
+
         _deviceId = info.Id;
         ConnectionChanged?.Invoke(ReadConnected(info.Properties));
     }
@@ -49,6 +51,7 @@ internal sealed class BluetoothConnectionWatcher : IDisposable
     private void OnRemoved(DeviceInformationUpdate update)
     {
         if (update.Id != _deviceId) return;
+        _deviceId = null;
         ConnectionChanged?.Invoke(false);
     }
 

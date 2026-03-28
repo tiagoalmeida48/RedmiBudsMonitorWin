@@ -24,11 +24,11 @@ internal sealed record BudsAdvertisement(EarbudData Left, EarbudData Right, Case
         var right = (byte)(payload[RightIndex] & BatteryMask);
         var caseVal = (byte)(payload[CaseIndex] & BatteryMask);
 
-        if (!left.IsValid && !right.IsValid && !caseVal.IsValid) return null;
+        if (!left.IsValid() && !right.IsValid() && !caseVal.IsValid()) return null;
 
         return new BudsAdvertisement(
-            Left: new EarbudData(left.IsValid ? left : BatterySnapshot.Unavailable, (payload[LeftIndex] & StatusBit) != 0),
-            Right: new EarbudData(right.IsValid ? right : BatterySnapshot.Unavailable, (payload[RightIndex] & StatusBit) != 0),
-            Case: new CaseData(caseVal.IsValid ? caseVal : BatterySnapshot.Unavailable, (payload[CaseIndex] & StatusBit) != 0));
+            Left: new EarbudData(left.IsValid() ? left : BatterySnapshot.Unavailable, (payload[LeftIndex] & StatusBit) != 0),
+            Right: new EarbudData(right.IsValid() ? right : BatterySnapshot.Unavailable, (payload[RightIndex] & StatusBit) != 0),
+            Case: new CaseData(caseVal.IsValid() ? caseVal : BatterySnapshot.Unavailable, (payload[CaseIndex] & StatusBit) != 0));
     }
 }
