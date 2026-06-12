@@ -5,15 +5,14 @@ namespace RedmiBudsMonitor;
 
 internal sealed class BatteryPopup : Form
 {
-    private BatterySnapshot Snapshot
-    {
-        get;
-        set
-        {
-            field = value;
-            if (Visible) Invalidate();
-        }
-    } = BatterySnapshot.Empty;
+    private const int   BaseHeight       = 155;
+    private const float DeviceSectionTop = 150f;
+    private const float DeviceRowsTop    = 180f;
+    private const float DeviceRowHeight  = 28f;
+
+    private BatterySnapshot Snapshot { get; set; } = BatterySnapshot.Empty;
+
+    private IReadOnlyList<DeviceBattery> _devices = [];
 
     public BatteryPopup()
     {
@@ -21,14 +20,33 @@ internal sealed class BatteryPopup : Form
         ShowInTaskbar = false;
         TopMost = true;
         DoubleBuffered = true;
+        ResizeRedraw = true;
         BackColor = Color.FromArgb(28, 28, 30);
-        Width = 220;
-        Height = 155;
+        Width = 250;
+        Height = BaseHeight;
         StartPosition = FormStartPosition.Manual;
         Padding = new Padding(0);
     }
 
-    public void UpdateData(BatterySnapshot snapshot) => Snapshot = snapshot;
+    public void UpdateData(BatterySnapshot snapshot, IReadOnlyList<DeviceBattery> devices)
+    {
+        Snapshot = snapshot;
+        _devices = devices;
+        ApplyLayout();
+        if (Visible) Invalidate();
+    }
+
+    private void ApplyLayout()
+    {
+        var height = _devices.Count == 0
+            ? BaseHeight
+            : (int)(DeviceRowsTop + _devices.Count * DeviceRowHeight + 10f);
+        if (height == Height) return;
+
+        var bottom = Top + Height;
+        Height = height;
+        Top = bottom - height;
+    }
 
     public void ToggleNearTray()
     {
@@ -63,6 +81,44 @@ internal sealed class BatteryPopup : Form
         DrawRow(g, 0, BatteryDevice.Left, "Esquerdo", Snapshot.Left.Label, Snapshot.Left.Pct);
         DrawRow(g, 1, BatteryDevice.Case, "Caixa", Snapshot.Case.Label, Snapshot.Case.Pct);
         DrawRow(g, 2, BatteryDevice.Right, "Direito", Snapshot.Right.Label, Snapshot.Right.Pct);
+        DrawDevices(g);
+    }
+
+    private void DrawDevices(Graphics g)
+    {
+        var devices = _devices;
+        if (devices.Count == 0) return;
+
+        using var separator = new Pen(Color.FromArgb(45, 45, 50), 1);
+        g.DrawLine(separator, 16, DeviceSectionTop, Width - 16, DeviceSectionTop);
+
+        using var headerFont = new Font("Segoe UI", 9f, FontStyle.Bold);
+        using var headerBrush = new SolidBrush(Color.FromArgb(140, 140, 148));
+        g.DrawString("Outros dispositivos", headerFont, headerBrush, 16f, DeviceSectionTop + 8f);
+
+        using var nameFont = new Font("Segoe UI", 9.5f, FontStyle.Regular);
+        using var nameBrush = new SolidBrush(Color.FromArgb(200, 200, 205));
+        using var valueFont = new Font("Segoe UI", 9.5f, FontStyle.Bold);
+        using var nameFormat = new StringFormat(StringFormatFlags.NoWrap)
+        {
+            Trimming = StringTrimming.EllipsisCharacter,
+            LineAlignment = StringAlignment.Center,
+        };
+
+        for (var i = 0; i < devices.Count; i++)
+        {
+            var device = devices[i];
+            var y = DeviceRowsTop + i * DeviceRowHeight;
+            var label = device.Pct.ToLabel(false);
+
+            using var valueBrush = new SolidBrush(device.Pct.ToColor());
+            var valueSize = g.MeasureString(label, valueFont);
+            var valueX = Width - 16f - valueSize.Width;
+            g.DrawString(label, valueFont, valueBrush, valueX, y + (DeviceRowHeight - valueSize.Height) / 2f);
+
+            var nameRect = new RectangleF(16f, y, valueX - 24f, DeviceRowHeight);
+            g.DrawString(device.Name, nameFont, nameBrush, nameRect, nameFormat);
+        }
     }
 
     private void DrawBackground(Graphics g)

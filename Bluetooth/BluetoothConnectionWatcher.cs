@@ -18,7 +18,7 @@ internal sealed class BluetoothConnectionWatcher : IDisposable
         _deviceNameFilter = deviceNameFilter;
 
         var aqs = BluetoothDevice.GetDeviceSelectorFromPairingState(true);
-        _watcher = DeviceInformation.CreateWatcher(aqs, [IsConnectedProperty]);
+        _watcher = DeviceInformation.CreateWatcher(aqs, new[] { IsConnectedProperty });
         _watcher.Added += (_, info) => OnAdded(info);
         _watcher.Updated += (_, update) => OnUpdated(update);
         _watcher.Removed += (_, update) => OnRemoved(update);

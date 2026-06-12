@@ -10,6 +10,9 @@
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <AssemblyName>RedmiBudsMonitor</AssemblyName>
     <RootNamespace>RedmiBudsMonitor</RootNamespace>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <PublishDir>bin\$(Configuration)\publish\</PublishDir>
   </PropertyGroup>
 
 </Project>

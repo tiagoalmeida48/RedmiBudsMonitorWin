@@ -11,10 +11,8 @@ internal static class TrayIconRenderer
 
     private const int IconSize = 32;
 
-    public static Icon Render(BatterySnapshot snapshot)
+    public static Icon Render(byte overallMin, bool budsConnected)
     {
-        var min = snapshot.MinPercent;
-
         using var bmp = new Bitmap(IconSize, IconSize);
         using var g = Graphics.FromImage(bmp);
 
@@ -22,19 +20,20 @@ internal static class TrayIconRenderer
         g.SmoothingMode = SmoothingMode.HighQuality;
         g.Clear(Color.Transparent);
 
-        if (min.IsValid()) DrawHeadphone(g);
-        if (min.IsValid() && min < 50) DrawBatteryLabel(g, min);
+        DrawHeadphone(g, budsConnected ? Color.White : Color.FromArgb(140, 140, 140));
+
+        if (overallMin.IsValid() && overallMin < 50) DrawBatteryLabel(g, overallMin);
 
         return BitmapToIcon(bmp);
     }
 
-    private static void DrawHeadphone(Graphics g)
+    private static void DrawHeadphone(Graphics g, Color color)
     {
-        using var arc = new Pen(Color.White, 3.5f) { LineJoin = LineJoin.Round };
+        using var arc = new Pen(color, 3.5f) { LineJoin = LineJoin.Round };
         g.DrawArc(arc, 3, 1, 26, 18, 180, 180);
 
-        using var brush = new SolidBrush(Color.White);
-        using var pen = new Pen(Color.White, 1f);
+        using var brush = new SolidBrush(color);
+        using var pen = new Pen(color, 1f);
         g.FillEllipse(brush, 0, 13, 10, 14);
         g.DrawEllipse(pen, 0, 13, 10, 14);
         g.FillEllipse(brush, 22, 13, 10, 14);

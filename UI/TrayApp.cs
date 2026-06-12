@@ -17,6 +17,10 @@ internal sealed class TrayApp : IDisposable
     private readonly SynchronizationContext     _ctx;
     private readonly Timer                      _refreshTimer;
 
+    private volatile IReadOnlyList<DeviceBattery> _devices = [];
+    private volatile bool _budsConnected;
+    private int _deviceQueryBusy;
+
     public TrayApp()
     {
         _ctx   = SynchronizationContext.Current ?? new WindowsFormsSynchronizationContext();
@@ -39,7 +43,11 @@ internal sealed class TrayApp : IDisposable
         };
     }
 
-    public void Start() => _scanner.Start();
+    public void Start()
+    {
+        _scanner.Start();
+        _ = RefreshDevicesAsync();
+    }
 
     private ContextMenuStrip BuildMenu()
     {
@@ -52,8 +60,8 @@ internal sealed class TrayApp : IDisposable
     {
         var tray = new NotifyIcon
         {
-            Icon             = TrayIconRenderer.Render(BatterySnapshot.Empty),
-            Visible          = false,
+            Icon             = TrayIconRenderer.Render(BatterySnapshot.Unavailable, false),
+            Visible          = true,
             Text             = AppTitle,
             ContextMenuStrip = _menu,
         };
@@ -66,28 +74,67 @@ internal sealed class TrayApp : IDisposable
 
     private void OnConnectionChanged(bool connected)
     {
-        if (!connected)
-            _ctx.Post(_ => _tray.Visible = false, null);
+        _budsConnected = connected;
+        if (!connected) _state.Reset();
+        RefreshUi();
     }
 
-    private void OnRefreshTick(object? _) => RefreshUi();
+    private void OnRefreshTick(object? _) => _ = RefreshDevicesAsync();
+
+    private async Task RefreshDevicesAsync()
+    {
+        if (Interlocked.Exchange(ref _deviceQueryBusy, 1) == 1) return;
+        try
+        {
+            var all = await BluetoothBatteryEnumerator.QueryConnectedAsync();
+
+            var others = new List<DeviceBattery>(all.Count);
+            var budsPct = BatterySnapshot.Unavailable;
+            foreach (var device in all)
+            {
+                if (device.Name.StartsWith(DeviceName, StringComparison.OrdinalIgnoreCase))
+                    budsPct = device.Pct;
+                else
+                    others.Add(device);
+            }
+
+            if (budsPct.IsValid()) _state.ApplyHeadsetFallback(budsPct);
+            _devices = others;
+        }
+        catch
+        {
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _deviceQueryBusy, 0);
+        }
+        RefreshUi();
+    }
 
     private void RefreshUi()
     {
-        var snapshot = _state.Snapshot();
-        if (!snapshot.MinPercent.IsValid()) return;
+        var snapshot      = _state.Snapshot();
+        var devices       = _devices;
+        var budsConnected = _budsConnected;
+
+        var overallMin = budsConnected ? snapshot.MinPercent : BatterySnapshot.Unavailable;
+        foreach (var device in devices)
+            if (device.Pct.IsValid() && device.Pct < overallMin) overallMin = device.Pct;
 
         Icon? icon;
-        try { icon = TrayIconRenderer.Render(snapshot); }
-        catch { return; }
+        try { icon = TrayIconRenderer.Render(overallMin, budsConnected); }
+        catch { icon = null; }
 
         _ctx.Post(_ =>
         {
-            var old = _tray.Icon;
-            _tray.Icon = icon;
-            old?.Dispose();
+            if (icon is not null)
+            {
+                var old = _tray.Icon;
+                _tray.Icon = icon;
+                old?.Dispose();
+            }
             if (!_tray.Visible) _tray.Visible = true;
-            _popup.UpdateData(snapshot);
+            _popup.UpdateData(snapshot, devices);
         }, null);
     }
 
