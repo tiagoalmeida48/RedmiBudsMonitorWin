@@ -38,10 +38,10 @@ BLE advertisements.
 ## Build
 
 ```bash
-dotnet build -c Release
+dotnet build RedmiBudsMonitor.slnx -c Release
 
 # Executável standalone (sem precisar do runtime instalado)
-dotnet publish -c Release -r win-x64 --self-contained -o publish/
+dotnet publish src/RedmiBudsMonitor.csproj -c Release -r win-x64 --self-contained -o publish/
 ```
 
 ---
@@ -50,24 +50,26 @@ dotnet publish -c Release -r win-x64 --self-contained -o publish/
 
 ```
 RedmiBudsMonitor/
-├── Program.cs                        entry point — STAThread, single instance, inicia TrayApp
-├── RedmiBudsMonitor.csproj           WinExe, net10.0-windows10.0.19041.0, win-x64
-├── Bluetooth/
-│   ├── BleScanner.cs                 escuta BLE advertisements, filtra por Company ID
-│   ├── BudsAdvertisement.cs          parseia o payload do advertisement (L/R/Case)
-│   ├── BluetoothConnectionWatcher.cs monitora conexão/desconexão via DeviceWatcher
-│   ├── EarbudData.cs                 record: Battery (byte) + InCase (bool)
-│   └── CaseData.cs                   record: Battery (byte) + Charging (bool)
-├── Domain/
-│   ├── BatteryState.cs               estado thread-safe, agrega leituras do scanner
-│   ├── BatterySnapshot.cs            snapshot imutável com L/R/Case + MinPercent
-│   ├── BatteryEntry.cs               par (Pct, Label) por dispositivo
-│   ├── BatteryColors.cs              extension methods em byte: IsValid, ToColor, ToLabel
-│   └── BatteryDevice.cs              enum: Left, Case, Right
-└── UI/
-    ├── TrayApp.cs                    orquestra scanner, watcher, ícone e popup
-    ├── TrayIconRenderer.cs           renderiza ícone 32×32 (headphone + % se < 50)
-    └── BatteryPopup.cs               form 220×155 sem borda, próximo à bandeja
+├── RedmiBudsMonitor.slnx                 solução (formato XML)
+└── src/
+    ├── Program.cs                        entry point — STAThread, single instance, inicia TrayApp
+    ├── RedmiBudsMonitor.csproj           WinExe, net10.0-windows10.0.19041.0, win-x64
+    ├── Bluetooth/
+    │   ├── BleScanner.cs                 escuta BLE advertisements, filtra por Company ID
+    │   ├── BudsAdvertisement.cs          parseia o payload do advertisement (L/R/Case)
+    │   ├── BluetoothConnectionWatcher.cs monitora conexão/desconexão via DeviceWatcher
+    │   ├── EarbudData.cs                 record: Battery (byte) + InCase (bool)
+    │   └── CaseData.cs                   record: Battery (byte) + Charging (bool)
+    ├── Domain/
+    │   ├── BatteryState.cs               estado thread-safe, agrega leituras do scanner
+    │   ├── BatterySnapshot.cs            snapshot imutável com L/R/Case + MinPercent
+    │   ├── BatteryEntry.cs               par (Pct, Label) por dispositivo
+    │   ├── BatteryColors.cs              extension methods em byte: IsValid, ToColor, ToLabel
+    │   └── BatteryDevice.cs              enum: Left, Case, Right
+    └── UI/
+        ├── TrayApp.cs                    orquestra scanner, watcher, ícone e popup
+        ├── TrayIconRenderer.cs           renderiza ícone 32×32 (headphone + % se < 50)
+        └── BatteryPopup.cs               form 220×155 sem borda, próximo à bandeja
 ```
 
 ---

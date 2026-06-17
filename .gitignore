@@ -1,4 +1,4 @@
-﻿.claude/**
-.idea/**
-bin/**
-obj/**
+.claude/
+.idea/
+bin/
+obj/
