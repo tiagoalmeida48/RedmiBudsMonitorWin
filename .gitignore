@@ -1,4 +1,6 @@
-.claude/
+# Versionamos .claude/ (skills, agents, settings.json) para mostrar o fluxo com IA,
+# mas mantemos as configs pessoais/de máquina fora do git.
+.claude/settings.local.json
 .idea/
 bin/
 obj/

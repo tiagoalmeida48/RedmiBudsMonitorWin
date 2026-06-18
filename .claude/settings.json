@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build:*)",
+      "Bash(dotnet run --project src/TrayBatt.csproj:*)",
+      "Bash(dotnet run --project tools/BudsProbe/BudsProbe.csproj:*)",
+      "Bash(dotnet publish:*)"
+    ]
+  }
+}
