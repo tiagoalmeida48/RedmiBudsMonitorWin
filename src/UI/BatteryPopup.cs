@@ -1,7 +1,7 @@
 using System.Drawing.Drawing2D;
 using System.Drawing.Text;
 
-namespace RedmiBudsMonitor;
+namespace TrayBatt;
 
 internal sealed class BatteryPopup : Form
 {
@@ -78,9 +78,9 @@ internal sealed class BatteryPopup : Form
         DrawBackground(g);
         DrawTitle(g);
         DrawSeparator(g);
-        DrawRow(g, 0, BatteryDevice.Left, "Esquerdo", Snapshot.Left.Label, Snapshot.Left.Pct);
-        DrawRow(g, 1, BatteryDevice.Case, "Caixa", Snapshot.Case.Label, Snapshot.Case.Pct);
-        DrawRow(g, 2, BatteryDevice.Right, "Direito", Snapshot.Right.Label, Snapshot.Right.Pct);
+        DrawRow(g, 0, BatteryDevice.Left, "Esquerdo", Snapshot.Left.Label, Snapshot.Left.Pct, Snapshot.Left.InCase);
+        DrawRow(g, 1, BatteryDevice.Case, "Caixa", Snapshot.Case.Label, Snapshot.Case.Pct, inCase: null);
+        DrawRow(g, 2, BatteryDevice.Right, "Direito", Snapshot.Right.Label, Snapshot.Right.Pct, Snapshot.Right.InCase);
         DrawDevices(g);
     }
 
@@ -143,11 +143,12 @@ internal sealed class BatteryPopup : Form
         g.DrawLine(pen, 16, 38, Width - 16, 38);
     }
 
-    private void DrawRow(Graphics g, int index, BatteryDevice device, string name, string label, byte pct)
+    private void DrawRow(Graphics g, int index, BatteryDevice device, string name, string label, byte pct, bool? inCase)
     {
         var y = 46f + index * 34f;
         DrawRowIcon(g, device, y);
-        DrawRowName(g, name, y);
+        var nameWidth = DrawRowName(g, name, y);
+        if (inCase is { } state) DrawPresenceTag(g, 50f + nameWidth + 8f, y, state);
         DrawRowValue(g, label, pct, y);
     }
 
@@ -163,12 +164,33 @@ internal sealed class BatteryPopup : Form
         g.Restore(state);
     }
 
-    private static void DrawRowName(Graphics g, string name, float y)
+    private static float DrawRowName(Graphics g, string name, float y)
     {
         using var font = new Font("Segoe UI", 10.5f, FontStyle.Regular);
         using var brush = new SolidBrush(Color.FromArgb(200, 200, 205));
         var size = g.MeasureString(name, font);
         g.DrawString(name, font, brush, 50f, y + (26f - size.Height) / 2f);
+        return size.Width;
+    }
+
+    private static void DrawPresenceTag(Graphics g, float x, float y, bool inCase)
+    {
+        var (fill, text) = inCase
+            ? (Color.FromArgb(70, 70, 76), "na caixa")
+            : (Color.FromArgb(40, 110, 70), "em uso");
+
+        using var font = new Font("Segoe UI", 7.5f, FontStyle.Bold);
+        var size = g.MeasureString(text, font);
+        var width = size.Width + 10f;
+        const float height = 15f;
+        var tagY = y + (26f - height) / 2f;
+
+        using var bg = new SolidBrush(fill);
+        using var path = RoundRect(x, tagY, width, height, height);
+        g.FillPath(bg, path);
+
+        using var textBrush = new SolidBrush(Color.FromArgb(225, 225, 230));
+        g.DrawString(text, font, textBrush, x + 5f, tagY + (height - size.Height) / 2f);
     }
 
     private void DrawRowValue(Graphics g, string label, byte pct, float y)

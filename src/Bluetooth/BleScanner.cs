@@ -1,7 +1,7 @@
 using Windows.Devices.Bluetooth.Advertisement;
 using Windows.Storage.Streams;
 
-namespace RedmiBudsMonitor;
+namespace TrayBatt;
 
 internal sealed class BleScanner : IDisposable
 {

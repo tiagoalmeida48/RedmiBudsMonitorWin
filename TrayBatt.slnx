@@ -2,5 +2,5 @@
   <Configurations>
     <Platform Name="x64" />
   </Configurations>
-  <Project Path="src/RedmiBudsMonitor.csproj" />
+  <Project Path="src/TrayBatt.csproj" />
 </Solution>

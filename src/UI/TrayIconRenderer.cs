@@ -2,7 +2,7 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Text;
 using System.Runtime.InteropServices;
 
-namespace RedmiBudsMonitor;
+namespace TrayBatt;
 
 internal static class TrayIconRenderer
 {

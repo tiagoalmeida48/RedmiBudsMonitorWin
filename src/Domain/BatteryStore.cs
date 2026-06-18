@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace RedmiBudsMonitor;
+namespace TrayBatt;
 
 internal static class BatteryStore
 {
@@ -8,7 +8,7 @@ internal static class BatteryStore
 
     private static readonly string FilePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "RedmiBudsMonitor",
+        "TrayBatt",
         "battery-state.json");
 
     public static StoredLevels? TryLoad()

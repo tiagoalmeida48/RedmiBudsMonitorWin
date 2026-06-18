@@ -1,0 +1,3 @@
+Monitorando advertisements dos Redmi Buds... (Enter para sair)
+Deixe UM fone em uso e o outro na caixa; mexa na caixa para forcar o broadcast.
+bit80 ligado = na caixa | desligado = EM USO (fora da caixa)

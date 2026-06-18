@@ -1,4 +1,4 @@
-namespace RedmiBudsMonitor;
+namespace TrayBatt;
 
 internal static class BatteryColors
 {

@@ -1,4 +1,4 @@
-namespace RedmiBudsMonitor;
+namespace TrayBatt;
 
 internal readonly record struct BatterySnapshot(BatteryEntry Left, BatteryEntry Right, BatteryEntry Case)
 {

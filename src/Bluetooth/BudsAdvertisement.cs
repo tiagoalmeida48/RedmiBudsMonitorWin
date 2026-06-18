@@ -1,15 +1,17 @@
-namespace RedmiBudsMonitor;
+namespace TrayBatt;
 
-internal sealed record BudsAdvertisement(EarbudData Left, EarbudData Right, CaseData Case)
+internal sealed record BudsAdvertisement(EarbudData Left, EarbudData Right, CaseData Case, bool LidOpen)
 {
     private const byte Header0 = 0x16;
     private const byte Header1 = 0x01;
     private const int MinPayloadLength = 8;
+    private const int LidIndex = 3;
     private const int LeftIndex = 5;
     private const int RightIndex = 6;
     private const int CaseIndex = 7;
     private const byte BatteryMask = 0x7F;
     private const byte StatusBit = 0x80;
+    private const byte LidOpenBit = 0x01;
 
     public bool HasLeft => Left.Battery != BatterySnapshot.Unavailable;
     public bool HasRight => Right.Battery != BatterySnapshot.Unavailable;
@@ -29,6 +31,7 @@ internal sealed record BudsAdvertisement(EarbudData Left, EarbudData Right, Case
         return new BudsAdvertisement(
             Left: new EarbudData(left.IsValid() ? left : BatterySnapshot.Unavailable, (payload[LeftIndex] & StatusBit) != 0),
             Right: new EarbudData(right.IsValid() ? right : BatterySnapshot.Unavailable, (payload[RightIndex] & StatusBit) != 0),
-            Case: new CaseData(caseVal.IsValid() ? caseVal : BatterySnapshot.Unavailable, (payload[CaseIndex] & StatusBit) != 0));
+            Case: new CaseData(caseVal.IsValid() ? caseVal : BatterySnapshot.Unavailable, (payload[CaseIndex] & StatusBit) != 0),
+            LidOpen: (payload[LidIndex] & LidOpenBit) != 0);
     }
 }

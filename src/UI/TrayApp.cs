@@ -1,6 +1,6 @@
 using Timer = System.Threading.Timer;
 
-namespace RedmiBudsMonitor;
+namespace TrayBatt;
 
 internal sealed class TrayApp : IDisposable
 {
@@ -75,7 +75,6 @@ internal sealed class TrayApp : IDisposable
     private void OnConnectionChanged(bool connected)
     {
         _budsConnected = connected;
-        if (!connected) _state.Reset();
         RefreshUi();
     }
 
@@ -98,7 +97,7 @@ internal sealed class TrayApp : IDisposable
                     others.Add(device);
             }
 
-            if (budsPct.IsValid()) _state.ApplyHeadsetFallback(budsPct);
+            if (budsPct.IsValid()) _state.ApplyConnectedBattery(budsPct);
             _devices = others;
         }
         catch

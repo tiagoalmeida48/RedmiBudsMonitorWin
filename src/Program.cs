@@ -1,11 +1,11 @@
-using RedmiBudsMonitor;
+using TrayBatt;
 
 internal static class Program
 {
     [STAThread]
     private static void Main()
     {
-        using var mutex = new Mutex(true, "RedmiBudsMonitor_SingleInstance", out bool created);
+        using var mutex = new Mutex(true, "TrayBatt_SingleInstance", out bool created);
         if (!created) return;
 
         Application.EnableVisualStyles();

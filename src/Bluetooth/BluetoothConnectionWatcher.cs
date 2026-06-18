@@ -1,7 +1,7 @@
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Enumeration;
 
-namespace RedmiBudsMonitor;
+namespace TrayBatt;
 
 internal sealed class BluetoothConnectionWatcher : IDisposable
 {

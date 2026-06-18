@@ -4,7 +4,7 @@ using Windows.Devices.Enumeration;
 using Windows.Devices.Enumeration.Pnp;
 using Windows.Storage.Streams;
 
-namespace RedmiBudsMonitor;
+namespace TrayBatt;
 
 internal static class BluetoothBatteryEnumerator
 {
